@@ -1,3 +1,5 @@
+import time
+
 import requests
 from asgiref.sync import async_to_sync
 from .models import Coin
@@ -11,7 +13,9 @@ channel_layer = get_channel_layer()
 
 @shared_task
 def get_coins_data():
-    url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false'
+    global state, state_price_change
+    url = 'https://api.coingecko.com/api/v3/coins/' \
+          'markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false'
 
     data = requests.get(url).json()
 
@@ -31,14 +35,31 @@ def get_coins_data():
             state = 'raise'
 
         obj.price = coin['current_price']
+
         obj.rank = coin['market_cap_rank']
         obj.image = coin['image']
+        row_market_capital = coin['market_cap']
+
+        obj.market_capital = '{:,}'.format(row_market_capital).replace(',', ' ')
+
+        obj.price_change_percentage_24h = coin['price_change_percentage_24h']
+
+        if obj.price_change_percentage_24h > coin['price_change_percentage_24h']:
+            state_price_change = 'fall'
+        elif obj.price_change_percentage_24h == coin['price_change_percentage_24h']:
+            state_price_change = 'same'
+        elif obj.price_change_percentage_24h < coin['price_change_percentage_24h']:
+            state_price_change = 'raise'
 
         obj.save()
 
         new_data = model_to_dict(obj)
-        new_data.update({'state': state})
+        new_data.update({
+            'state': state,
+            'state_price_change': state_price_change
+            })
 
         coins.append(new_data)
 
     async_to_sync(channel_layer.group_send)('coins', {'type': 'send_new_data', 'text': coins})
+
