@@ -18,6 +18,7 @@
 {% include 'header.html' %}
 
 
+
 {% verbatim %}
 
 <div id="app">
@@ -40,6 +41,7 @@
                     </thead>
                     <tbody>
 
+
                     <tr v-for="coin in coins" :key="coin.id">
                         <td class="align-middle">{{ coin.rank }}.</td>
                         <td class="align-middle">
@@ -52,7 +54,7 @@
                         <td class="td-price" :class="{'raise': coin.state === 'raise', 'fall' : coin.state === 'fall'}">
                             ${{ coin.price }}
 
-                        <td class="coin-24change" :class="{'raise': coin.state_price_change === 'raise', 'fall' : coin.state_price_change === 'fall'}" >{{ coin.price_change_percentage_24h }} %</td>
+                        <td class="coin-24change">{{ coin.price_change_percentage_24h }} %</td>
                         <td class="coin-capital">${{ coin.market_capital }}</td>
 
                     </tr>
@@ -76,24 +78,18 @@
             return {
                 coin: '',
                 coins: null,
-
-
             }
         },
         created() {
             const socket = new WebSocket(`ws://${window.location.host}/ws/coins/`);
-
             let _this = this;
 
             socket.onmessage = function (event) {
                 _this.coins = JSON.parse(event.data)
-
-
             }
         },
 
     }
-
     createApp(MarketApp).mount('#app')
 
 </script>
