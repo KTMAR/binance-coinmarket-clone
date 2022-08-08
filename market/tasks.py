@@ -13,7 +13,8 @@ channel_layer = get_channel_layer()
 
 @shared_task
 def get_coins_data():
-    global state, state_price_change
+
+    global state
     url = 'https://api.coingecko.com/api/v3/coins/' \
           'markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false'
 
@@ -44,19 +45,12 @@ def get_coins_data():
 
         obj.price_change_percentage_24h = coin['price_change_percentage_24h']
 
-        if obj.price_change_percentage_24h > coin['price_change_percentage_24h']:
-            state_price_change = 'fall'
-        elif obj.price_change_percentage_24h == coin['price_change_percentage_24h']:
-            state_price_change = 'same'
-        elif obj.price_change_percentage_24h < coin['price_change_percentage_24h']:
-            state_price_change = 'raise'
-
         obj.save()
 
         new_data = model_to_dict(obj)
+
         new_data.update({
             'state': state,
-            'state_price_change': state_price_change
             })
 
         coins.append(new_data)
